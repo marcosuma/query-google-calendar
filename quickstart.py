@@ -38,7 +38,8 @@ def main():
         service = build('calendar', 'v3', credentials=creds)
 
         text_query = input('Please enter your text query input: ')
-        timezone = input('In which timezone you want it (e.g. Europe/London) - by default it\'s your current calendar timezone: ')
+        timezone = input(
+            'In which timezone you want it (e.g. Europe/London) - by default it\'s your current calendar timezone: ')
 
         # Call the Calendar API
         now = datetime.utcnow().isoformat() + 'Z'  # 'Z' indicates UTC time
@@ -47,19 +48,21 @@ def main():
         while True:
             # calls the Calendar API
             events_result = service.events().list(calendarId='primary', timeMin=now,
-                                              maxResults=50, singleEvents=True,
-                                              orderBy='startTime', q=text_query).execute()
-            
+                                                  maxResults=50, singleEvents=True,
+                                                  orderBy='startTime', q=text_query).execute()
+
             # parses the response
             events = events_result.get('items', [])
             if not events:
                 print('No upcoming events found.')
                 return
-            
+
             # timezones = ['America/Los_Angeles', 'Europe/Madrid', 'Europe/London', 'Asia/Singapore']
             # prints the events
             for event in events:
-                start = event['start'].get('dateTime', event['start'].get('date'))
+                start = event['start'].get(
+                    'dateTime', event['start'].get('date'))
+                end = event['end'].get('dateTime', event['end'].get('date'))
                 # all_times = []
                 # for tz in timezones:
                 #     local_datetime = datetime_start_orig.astimezone(pytz.timezone(tz))
@@ -67,15 +70,23 @@ def main():
                 if timezone != "":
                     localFormat = "%Y-%m-%dT%H:%M:%S%z"
                     datetime_start_orig = datetime.strptime(start, localFormat)
-                    local_datetime = datetime_start_orig.astimezone(pytz.timezone(timezone))
+                    local_start = datetime_start_orig.astimezone(
+                        pytz.timezone(timezone))
+                    local_start = local_start.strftime("%a, %d %b, %Y %H:%M")
+                if timezone != "":
+                    localFormat = "%Y-%m-%dT%H:%M:%S%z"
+                    datetime_end_orig = datetime.strptime(end, localFormat)
+                    local_end = datetime_end_orig.astimezone(
+                        pytz.timezone(timezone))
+                    local_end = local_end.strftime("%H:%M")
 
-                print(local_datetime if local_datetime != None else start, event['summary'])
-            
+                print(local_start if local_start != None else start, "-",
+                      local_end if local_end != None else end)
+
             # check if next page is available.
             page_token = events_result.get('nextPageToken')
             if not page_token:
                 break
-
 
     except HttpError as error:
         print('An error occurred: %s' % error)
